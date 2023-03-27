@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DXF Line Extractor</title>
+</head>
+<body>
+  <input type="file" id="file-input">
+
+  <script type="module">
+    import DxfParser from 'https://cdn.skypack.dev/dxf-parser';
+
+    function extractLinesOnBoxLayer(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const dxfContent = reader.result;
+          const parser = new DxfParser();
+          const dxfData = parser.parseSync(dxfContent);
+
+          const lines = dxfData.entities.filter(entity => entity.type === 'LINE');
+
+          const linePoints = lines.map(line => ({
+            start: { x: line.vertices[0].x, y: line.vertices[0].y },
+            end: { x: line.vertices[1].x, y: line.vertices[1].y }
+          }));
+
+          resolve(linePoints);
+        };
+        reader.onerror = reject;
+        reader.readAsText(file);
+      });
+    }
+
+    const fileInput = document.getElementById('file-input');
+    fileInput.addEventListener('change', async (event) => {
+      const file = event.target.files[0];
+      const linePoints = await extractLinesOnBoxLayer(file);
+      linePoints.forEach((line, index) => {
+        console.log(`Line ${index + 1} - Start: (${line.start.x}, ${line.start.y}), End: (${line.end.x}, ${line.end.y})`);
+      });
+    });
+  </script>
+</body>
+</html>
